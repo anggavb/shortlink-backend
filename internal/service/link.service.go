@@ -60,7 +60,7 @@ func (ls *LinkService) CreateLink(ctx context.Context, userId int, body dto.Crea
 		return dto.CreateLinkResponse{}, err
 	}
 
-	if err := ls.linkCache.SaveOriginalURL(ctx, userId, link.Slug, link.OriginalURL, linkCacheTTL); err != nil {
+	if err := ls.linkCache.SaveOriginalURL(ctx, link.Slug, link.OriginalURL, linkCacheTTL); err != nil {
 		return dto.CreateLinkResponse{}, err
 	}
 
@@ -86,7 +86,7 @@ func (ls *LinkService) createLinkWithGeneratedSlug(ctx context.Context, userId i
 			return dto.CreateLinkResponse{}, err
 		}
 
-		if err := ls.linkCache.SaveOriginalURL(ctx, userId, link.Slug, link.OriginalURL, linkCacheTTL); err != nil {
+		if err := ls.linkCache.SaveOriginalURL(ctx, link.Slug, link.OriginalURL, linkCacheTTL); err != nil {
 			return dto.CreateLinkResponse{}, err
 		}
 
@@ -158,7 +158,7 @@ func (ls *LinkService) DeleteLink(ctx context.Context, userId int, linkId int64)
 		return err
 	}
 
-	return ls.linkCache.DeleteOriginalURL(ctx, userId, slug)
+	return ls.linkCache.DeleteOriginalURL(ctx, slug)
 }
 
 func generateRandomSlug(length int) (string, error) {
