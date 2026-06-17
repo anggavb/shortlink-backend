@@ -3,11 +3,10 @@ package middleware
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/shortlink-backend/internal/jwttoken"
-	"github.com/shortlink-backend/internal/repository"
 	"github.com/shortlink-backend/pkg"
 )
 
-func VerifyToken(authCache *repository.AuthCacheRepository) gin.HandlerFunc {
+func VerifyToken() gin.HandlerFunc {
 	return func(ctx *gin.Context) { // closure function
 		token, ok := jwttoken.VerifyClientToken(ctx)
 		if !ok {
