@@ -46,3 +46,52 @@ func (lr *LinkRepository) CreateLink(ctx context.Context, userId int, originalUR
 
 	return link, nil
 }
+
+func (lr *LinkRepository) CountLinksByUser(ctx context.Context, userId int) (int64, error) {
+	sql := `
+		SELECT COUNT(id)
+		FROM links
+		WHERE user_id = $1
+			AND deleted_at IS NULL;
+	`
+
+	var total int64
+	if err := lr.db.QueryRow(ctx, sql, userId).Scan(&total); err != nil {
+		return 0, err
+	}
+
+	return total, nil
+}
+
+func (lr *LinkRepository) ListLinksByUser(ctx context.Context, userId, limit, offset int) ([]model.Link, error) {
+	sql := `
+		SELECT id, original_url, slug
+		FROM links
+		WHERE user_id = $1
+			AND deleted_at IS NULL
+		ORDER BY created_at DESC, id DESC
+		LIMIT $2 OFFSET $3;
+	`
+	args := []any{userId, limit, offset}
+
+	rows, err := lr.db.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	links := make([]model.Link, 0)
+	for rows.Next() {
+		var link model.Link
+		if err := rows.Scan(&link.ID, &link.OriginalURL, &link.Slug); err != nil {
+			return nil, err
+		}
+		links = append(links, link)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return links, nil
+}

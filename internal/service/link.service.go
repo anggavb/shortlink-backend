@@ -16,6 +16,8 @@ const (
 	linkCacheTTL              = time.Hour
 	maxSlugGenerationAttempts = 5
 	randomSlugLength          = 5
+	defaultPage               = 1
+	defaultLimit              = 10
 )
 
 var (
@@ -97,6 +99,55 @@ func (ls *LinkService) createLinkWithGeneratedSlug(ctx context.Context, userId i
 	return dto.CreateLinkResponse{}, ErrGenerateSlugFailed
 }
 
+func (ls *LinkService) ListLinks(ctx context.Context, userId int, query dto.ListLinksQuery) (dto.ListLinksResponse, error) {
+	page := defaultPage
+	if query.Page != nil {
+		page = *query.Page
+	}
+
+	limit := defaultLimit
+	if query.Limit != nil {
+		limit = *query.Limit
+	}
+
+	if page == 0 {
+		page = defaultPage
+	}
+	if limit == 0 {
+		limit = defaultLimit
+	}
+
+	total, err := ls.linkRepository.CountLinksByUser(ctx, userId)
+	if err != nil {
+		return dto.ListLinksResponse{}, err
+	}
+
+	offset := (page - 1) * limit
+	links, err := ls.linkRepository.ListLinksByUser(ctx, userId, limit, offset)
+	if err != nil {
+		return dto.ListLinksResponse{}, err
+	}
+
+	data := make([]dto.CreateLinkResponse, 0, len(links))
+	for _, link := range links {
+		data = append(data, dto.CreateLinkResponse{
+			ID:          link.ID,
+			OriginalURL: link.OriginalURL,
+			Slug:        link.Slug,
+		})
+	}
+
+	return dto.ListLinksResponse{
+		Data: data,
+		Meta: dto.PaginationMeta{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: calculateTotalPages(total, limit),
+		},
+	}, nil
+}
+
 func generateRandomSlug(length int) (string, error) {
 	const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	var builder strings.Builder
@@ -112,4 +163,12 @@ func generateRandomSlug(length int) (string, error) {
 	}
 
 	return builder.String(), nil
+}
+
+func calculateTotalPages(total int64, limit int) int {
+	if total == 0 {
+		return 0
+	}
+
+	return int((total + int64(limit) - 1) / int64(limit))
 }

@@ -12,6 +12,23 @@ type CreateLinkResponse struct {
 	ShortURL    string `json:"short_url"`
 }
 
+type ListLinksQuery struct {
+	Page  *int `form:"page" binding:"omitempty,gte=1"`
+	Limit *int `form:"limit" binding:"omitempty,gte=1,lte=100"`
+}
+
+type ListLinksResponse struct {
+	Data []CreateLinkResponse `json:"data"`
+	Meta PaginationMeta       `json:"meta"`
+}
+
+type PaginationMeta struct {
+	Page       int   `json:"page"`
+	Limit      int   `json:"limit"`
+	Total      int64 `json:"total"`
+	TotalPages int   `json:"total_pages"`
+}
+
 type GetLinkResponse struct {
 	OriginalURL string `json:"original_url"`
 }

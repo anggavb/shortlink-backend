@@ -76,6 +76,52 @@ func (lc *LinkController) CreateLink(ctx *gin.Context) {
 	response.JSONCreated(ctx, res, "Link created successfully")
 }
 
+// ListLinks godoc
+// @Summary Get user links
+// @Description Get the authenticated user's links with pagination
+// @Tags Links
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param page query int false "Page number" minimum(1)
+// @Param limit query int false "Items per page" minimum(1) maximum(100)
+// @Success 200 {object} dto.Response "OK"
+// @Failure 400 {object} dto.Response "Bad Request"
+// @Failure 401 {object} dto.Response "Unauthorized"
+// @Failure 422 {object} dto.Response "Unprocessable Entity"
+// @Failure 500 {object} dto.Response "Internal Server Error"
+// @Router /links [get]
+func (lc *LinkController) ListLinks(ctx *gin.Context) {
+	claims, ok := jwttoken.GetClaims(ctx)
+	if !ok {
+		return
+	}
+
+	var query dto.ListLinksQuery
+	if err := binder.BindFormat(ctx, &query, binding.Query); err != nil {
+		errorMessages := binder.FormatValidationError(err)
+		if len(errorMessages) > 0 && errorMessages["error"] != "" {
+			response.JSONBadRequest(ctx)
+			return
+		}
+		response.JSONUnprocessableEntity(ctx, errorMessages)
+		return
+	}
+
+	res, err := lc.linkService.ListLinks(ctx.Request.Context(), claims.UserId, query)
+	if err != nil {
+		log.Println("Error: ", err.Error())
+		response.JSONInternalServerError(ctx)
+		return
+	}
+
+	for i := range res.Data {
+		res.Data[i].ShortURL = buildShortURL(ctx, res.Data[i].Slug)
+	}
+
+	response.JSONSuccess(ctx, res, "Links retrieved successfully")
+}
+
 func buildShortURL(ctx *gin.Context, slug string) string {
 	scheme := "http"
 	if ctx.Request.TLS != nil {
