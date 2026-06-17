@@ -23,6 +23,8 @@ func FormatValidationError(err error) map[string]string {
 				out[field] = fmt.Sprintf("The %s field is required.", field)
 			case "email":
 				out[field] = fmt.Sprintf("The %s field is not a valid email address.", field)
+			case "url":
+				out[field] = fmt.Sprintf("The %s field is not a valid URL.", field)
 			case "gt":
 				out[field] = fmt.Sprintf("The %s field must be greater than %s.", field, param)
 			case "gte":
@@ -48,6 +50,8 @@ func FormatValidationError(err error) map[string]string {
 				out[field] = fmt.Sprintf("The %s field must not exceed %d MB in size.", field, int(paramValue/(1024*1024)))
 			case "image_type":
 				out[field] = fmt.Sprintf("The %s field must be a valid image file (JPEG, PNG, BMP, or HEIC).", field)
+			case "shortlink_slug":
+				out[field] = fmt.Sprintf("The %s field must be 3-50 characters, contain only letters, numbers, and hyphens, and not be a reserved word.", field)
 			default:
 				out[field] = fmt.Sprintf("The %s field does not meet the validation requirements for %s %s.", field, tag, param)
 			}

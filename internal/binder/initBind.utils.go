@@ -51,6 +51,45 @@ func initValidate() {
 		})
 		log.Println("RegisterValidation - Add custom validation for 'numeric' tag")
 
+		v.RegisterValidation("shortlink_slug", func(fl validator.FieldLevel) bool {
+			field := fl.Field()
+			if field.Kind() == reflect.Ptr {
+				if field.IsNil() {
+					return true
+				}
+				field = field.Elem()
+			}
+
+			if field.Kind() != reflect.String {
+				return false
+			}
+
+			value := field.String()
+			if value == "" {
+				return true
+			}
+
+			if len(value) < 3 || len(value) > 50 {
+				return false
+			}
+
+			switch strings.ToLower(value) {
+			case "api", "login", "register", "dashboard":
+				return false
+			}
+
+			for _, char := range value {
+				isLetter := (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z')
+				isDigit := char >= '0' && char <= '9'
+				if !isLetter && !isDigit && char != '-' {
+					return false
+				}
+			}
+
+			return true
+		})
+		log.Println("RegisterValidation - Add custom validation for 'shortlink_slug' tag")
+
 		// Register Custom Validator for image_check tag
 		v.RegisterValidation("image_max_size", func(fl validator.FieldLevel) bool {
 			file, ok := fl.Field().Interface().(multipart.FileHeader)
