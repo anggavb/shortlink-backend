@@ -68,7 +68,7 @@ func (ac *AuthController) Register(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param loginRequest body dto.LoginRequest true "Login Request"
-// @Success 200 {object} dto.AuthResponse "OK"
+// @Success 200 {object} dto.Response "OK"
 // @Failure 400 {object} dto.Response "Bad Request"
 // @Failure 401 {object} dto.Response "Unauthorized"
 // @Failure 422 {object} dto.Response "Unprocessable Entity"
