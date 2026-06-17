@@ -59,3 +59,42 @@ func (ac *AuthController) Register(ctx *gin.Context) {
 
 	response.JSONCreated(ctx, nil, "Register Successfully")
 }
+
+// Login godoc
+// @Summary Login a user
+// @Description Login a user with email and password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param loginRequest body dto.LoginRequest true "Login Request"
+// @Success 200 {object} dto.AuthResponse "OK"
+// @Failure 400 {object} dto.Response "Bad Request"
+// @Failure 401 {object} dto.Response "Unauthorized"
+// @Failure 422 {object} dto.Response "Unprocessable Entity"
+// @Failure 500 {object} dto.Response "Internal Server Error"
+// @Router /auth [post]
+func (ac *AuthController) Login(ctx *gin.Context) {
+	var body dto.LoginRequest
+	if err := binder.BindFormat(ctx, &body, binding.JSON); err != nil {
+		errorMessages := binder.FormatValidationError(err)
+		if len(errorMessages) > 0 && errorMessages["error"] != "" {
+			response.JSONBadRequest(ctx)
+			return
+		}
+		response.JSONUnprocessableEntity(ctx, errorMessages)
+		return
+	}
+
+	res, err := ac.authService.LoginUser(ctx.Request.Context(), body)
+	if err != nil {
+		log.Println("Error: ", err.Error())
+		if strings.Contains(err.Error(), "wrong password") || strings.Contains(err.Error(), "no rows") {
+			response.JSONUnauthorized(ctx, "Invalid email or password")
+			return
+		}
+		response.JSONInternalServerError(ctx)
+		return
+	}
+
+	response.JSONSuccess(ctx, res, "Login Successfully")
+}

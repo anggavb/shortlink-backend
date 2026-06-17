@@ -21,16 +21,6 @@ type ResetPasswordRequest struct {
 }
 
 type AuthResponse struct {
-	Id             int        `json:"id,omitempty"`
-	Email          string     `json:"email,omitempty"`
-	FirstName      *string    `json:"first_name,omitempty"`
-	LastName       *string    `json:"last_name,omitempty"`
-	Role           *string    `json:"role,omitempty"`
-	Workplace      *string    `json:"workplace,omitempty"`
-	IsMember       bool       `json:"is_member,omitempty"`
-	IsReceiveEmail bool       `json:"is_receive_email,omitempty"`
-	Photo          *string    `json:"photo,omitempty"`
-	VerifiedAt     *time.Time `json:"verified_at,omitempty"`
-	CreatedAt      *time.Time `json:"created_at,omitempty"`
-	UpdatedAt      *time.Time `json:"updated_at,omitempty"`
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
 }

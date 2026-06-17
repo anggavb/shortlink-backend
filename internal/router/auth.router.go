@@ -18,7 +18,7 @@ func AuthRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	authService := service.NewAuthService(authRepo, authCache)
 	authController := controller.NewAuthController(authService)
 
-	// authRouter.POST("", authController.Login)
+	authRouter.POST("", authController.Login)
 	authRouter.POST("/register", authController.Register)
 	// authRouter.POST("/forgot-password", authController.ForgotPassword)
 	// authRouter.POST("/reset-password", authController.ResetPassword)

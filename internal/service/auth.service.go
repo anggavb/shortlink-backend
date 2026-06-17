@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/shortlink-backend/internal/dto"
+	"github.com/shortlink-backend/internal/jwttoken"
 	"github.com/shortlink-backend/internal/repository"
 	"github.com/shortlink-backend/pkg"
 )
@@ -33,4 +34,31 @@ func (as *AuthService) RegisterUser(ctx context.Context, user dto.RegisterReques
 	}
 
 	return nil
+}
+
+func (as *AuthService) LoginUser(ctx context.Context, user dto.LoginRequest) (dto.AuthResponse, error) {
+	userLogin, err := as.authRepository.GetUserByEmail(ctx, user.Email)
+	if err != nil {
+		return dto.AuthResponse{}, err
+	}
+
+	var hash pkg.HashConfig
+	if err := hash.Compare(user.Password, userLogin.Password); err != nil {
+		return dto.AuthResponse{}, err
+	}
+
+	claims := pkg.NewClaims(userLogin.Id, user.Email)
+	token, err := claims.GenerateJWT()
+	if err != nil {
+		return dto.AuthResponse{}, err
+	}
+
+	if err := as.authCache.SaveToken(ctx, jwttoken.HashToken(token), userLogin, claims.ExpiresAt.Time); err != nil {
+		return dto.AuthResponse{}, err
+	}
+
+	return dto.AuthResponse{
+		Token:     token,
+		ExpiresAt: claims.ExpiresAt.Time,
+	}, nil
 }
