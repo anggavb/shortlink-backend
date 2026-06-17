@@ -1,7 +1,7 @@
 include .env
 
-MIGRATION_PATH=db/migrations
-SEEDER_PATH=db/seeds
+MIGRATION_PATH=db/migration
+SEEDER_PATH=db/seed
 
 migrate-create:
 	@migrate create -ext sql -dir $(MIGRATION_PATH) -seq create_$(NAME)_table
