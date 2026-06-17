@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	_ "github.com/shortlink-backend/internal/binder"
 	"github.com/shortlink-backend/internal/config"
 	"github.com/shortlink-backend/internal/router"
 )
