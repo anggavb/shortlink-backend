@@ -24,6 +24,7 @@ var (
 	ErrDuplicateSlug        = errors.New("slug already used")
 	ErrGenerateSlugFailed   = errors.New("failed to generate unique slug")
 	ErrDuplicateOriginalURL = errors.New("original URL already used")
+	ErrLinkNotFound         = errors.New("link not found")
 )
 
 type LinkService struct {
@@ -146,6 +147,18 @@ func (ls *LinkService) ListLinks(ctx context.Context, userId int, query dto.List
 			TotalPages: calculateTotalPages(total, limit),
 		},
 	}, nil
+}
+
+func (ls *LinkService) DeleteLink(ctx context.Context, userId int, linkId int64) error {
+	slug, err := ls.linkRepository.SoftDeleteLink(ctx, userId, linkId)
+	if err != nil {
+		if errors.Is(err, repository.ErrLinkNotFound) {
+			return ErrLinkNotFound
+		}
+		return err
+	}
+
+	return ls.linkCache.DeleteOriginalURL(ctx, userId, slug)
 }
 
 func generateRandomSlug(length int) (string, error) {

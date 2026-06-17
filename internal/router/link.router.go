@@ -18,9 +18,8 @@ func LinkRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	linkService := service.NewLinkService(linkRepo, linkCache)
 	linkController := controller.NewLinkController(linkService)
 
-	linkRouter.POST("", middleware.VerifyToken(), linkController.CreateLink)
-	linkRouter.GET("", middleware.VerifyToken(), linkController.ListLinks)
-	// linkRouter.GET("/:id", linkController.GetLink)
-	// linkRouter.PUT("/:id", middleware.VerifyToken(linkCache), linkController.UpdateLink)
-	// linkRouter.DELETE("/:id", middleware.VerifyToken(linkCache), linkController.DeleteLink)
+	linkRouter.Use(middleware.VerifyToken())
+	linkRouter.POST("", linkController.CreateLink)
+	linkRouter.GET("", linkController.ListLinks)
+	linkRouter.DELETE("/:id", linkController.DeleteLink)
 }

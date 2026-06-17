@@ -32,3 +32,7 @@ type PaginationMeta struct {
 type GetLinkResponse struct {
 	OriginalURL string `json:"original_url"`
 }
+
+type LinkURI struct {
+	ID string `uri:"id" json:"id" binding:"required,numeric"`
+}

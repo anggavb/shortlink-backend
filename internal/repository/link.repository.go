@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shortlink-backend/internal/model"
@@ -11,6 +12,7 @@ import (
 
 var ErrDuplicateSlug = errors.New("slug already used")
 var ErrDuplicateOriginalURL = errors.New("original URL already used")
+var ErrLinkNotFound = errors.New("link not found")
 
 type LinkRepository struct {
 	db *pgxpool.Pool
@@ -94,4 +96,27 @@ func (lr *LinkRepository) ListLinksByUser(ctx context.Context, userId, limit, of
 	}
 
 	return links, nil
+}
+
+func (lr *LinkRepository) SoftDeleteLink(ctx context.Context, userId int, linkId int64) (string, error) {
+	sql := `
+		UPDATE links
+		SET deleted_at = now(),
+			updated_at = now()
+		WHERE id = $1
+			AND user_id = $2
+			AND deleted_at IS NULL
+		RETURNING slug;
+	`
+	args := []any{linkId, userId}
+
+	var slug string
+	if err := lr.db.QueryRow(ctx, sql, args...).Scan(&slug); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", ErrLinkNotFound
+		}
+		return "", err
+	}
+
+	return slug, nil
 }

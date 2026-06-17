@@ -26,6 +26,10 @@ func (r *LinkCacheRepository) SaveOriginalURL(ctx context.Context, userId int, s
 	return r.rdb.Set(ctx, r.linkKey(userId, slug), originalURL, ttl).Err()
 }
 
+func (r *LinkCacheRepository) DeleteOriginalURL(ctx context.Context, userId int, slug string) error {
+	return r.rdb.Del(ctx, r.linkKey(userId, slug)).Err()
+}
+
 func (r *LinkCacheRepository) linkKey(userId int, slug string) string {
 	return fmt.Sprintf("%s:%d:%s", r.prefix, userId, slug)
 }

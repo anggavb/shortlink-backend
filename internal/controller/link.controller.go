@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -120,6 +121,60 @@ func (lc *LinkController) ListLinks(ctx *gin.Context) {
 	}
 
 	response.JSONSuccess(ctx, res, "Links retrieved successfully")
+}
+
+// DeleteLink godoc
+// @Summary Delete a link
+// @Description Soft delete one authenticated user's link
+// @Tags Links
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Link ID" minimum(1)
+// @Success 204 "No Content"
+// @Failure 400 {object} dto.Response "Bad Request"
+// @Failure 401 {object} dto.Response "Unauthorized"
+// @Failure 404 {object} dto.Response "Not Found"
+// @Failure 422 {object} dto.Response "Unprocessable Entity"
+// @Failure 500 {object} dto.Response "Internal Server Error"
+// @Router /links/{id} [delete]
+func (lc *LinkController) DeleteLink(ctx *gin.Context) {
+	claims, ok := jwttoken.GetClaims(ctx)
+	if !ok {
+		return
+	}
+
+	var uri dto.LinkURI
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		log.Println("Error: ", err.Error())
+		errorMessages := binder.FormatValidationError(err)
+		if len(errorMessages) > 0 && errorMessages["error"] != "" {
+			response.JSONBadRequest(ctx)
+			return
+		}
+		response.JSONUnprocessableEntity(ctx, errorMessages)
+		return
+	}
+
+	linkId, err := strconv.ParseInt(uri.ID, 10, 64)
+	if err != nil || linkId < 1 {
+		response.JSONUnprocessableEntity(ctx, map[string]string{
+			"id": "The id field must be greater than or equal to 1.",
+		})
+		return
+	}
+
+	if err := lc.linkService.DeleteLink(ctx.Request.Context(), claims.UserId, linkId); err != nil {
+		log.Println("Error: ", err.Error())
+		if errors.Is(err, service.ErrLinkNotFound) {
+			response.JSONNotFound(ctx, "Link Not Found")
+			return
+		}
+		response.JSONInternalServerError(ctx)
+		return
+	}
+
+	response.JSONNoContent(ctx)
 }
 
 func buildShortURL(ctx *gin.Context, slug string) string {
