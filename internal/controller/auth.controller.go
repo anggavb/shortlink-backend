@@ -1,0 +1,61 @@
+package controller
+
+import (
+	"log"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/shortlink-backend/internal/binder"
+	"github.com/shortlink-backend/internal/dto"
+	"github.com/shortlink-backend/internal/response"
+	"github.com/shortlink-backend/internal/service"
+)
+
+type AuthController struct {
+	authService *service.AuthService
+}
+
+func NewAuthController(authService *service.AuthService) *AuthController {
+	return &AuthController{
+		authService: authService,
+	}
+}
+
+// Register godoc
+// @Summary Register a new user
+// @Description Register a new user with email and password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param registerRequest body dto.RegisterRequest true "Register Request"
+// @Success 201 {object} dto.Response "Created"
+// @Failure 400 {object} dto.Response "Bad Request"
+// @Failure 422 {object} dto.Response "Unprocessable Entity"
+// @Failure 409 {object} dto.Response "Conflict"
+// @Failure 500 {object} dto.Response "Internal Server Error"
+// @Router /auth/register [post]
+func (ac *AuthController) Register(ctx *gin.Context) {
+	var body dto.RegisterRequest
+	if err := binder.BindFormat(ctx, &body, binding.JSON); err != nil {
+		errorMessages := binder.FormatValidationError(err)
+		if len(errorMessages) > 0 && errorMessages["error"] != "" {
+			response.JSONBadRequest(ctx)
+			return
+		}
+		response.JSONUnprocessableEntity(ctx, errorMessages)
+		return
+	}
+
+	if err := ac.authService.RegisterUser(ctx.Request.Context(), body); err != nil {
+		log.Println("Error: ", err.Error())
+		if strings.Contains(err.Error(), "users_email_key") {
+			response.JSONDuplicate(ctx, "Email Already Used")
+			return
+		}
+		response.JSONInternalServerError(ctx)
+		return
+	}
+
+	response.JSONCreated(ctx, nil, "Register Successfully")
+}
