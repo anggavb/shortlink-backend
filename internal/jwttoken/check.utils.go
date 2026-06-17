@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/shortlink-backend/pkg"
 )
 
@@ -22,37 +21,4 @@ func GetClaims(ctx *gin.Context) (pkg.Claims, bool) {
 	}
 
 	return claims, true
-}
-
-func CheckAuthToken(ctx *gin.Context) (string, bool) {
-	token, ok := ctx.Get("token")
-	if !ok {
-		log.Println("Error: token not found in context")
-		return "", false
-	}
-
-	tokenString, ok := token.(string)
-	if !ok {
-		log.Println("Error: token type assertion failed")
-		return "", false
-	}
-	return tokenString, true
-}
-
-func CheckExpiredToken(ctx *gin.Context) (*jwt.NumericDate, error) {
-	claims, ok := GetClaims(ctx)
-	if !ok {
-		return nil, jwt.ErrTokenInvalidClaims
-	}
-
-	expiresAt, err := claims.GetExpirationTime()
-	if err != nil || expiresAt == nil {
-		if err != nil {
-			log.Println("Error: ", err.Error())
-		}
-		log.Println("Error: expiresAt is nil")
-		return nil, jwt.ErrTokenInvalidClaims
-	}
-
-	return expiresAt, nil
 }
