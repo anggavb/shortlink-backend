@@ -17,4 +17,5 @@ func InitRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	AuthRouter(router, db, rdb)
+	LinkRouter(router, db, rdb)
 }
