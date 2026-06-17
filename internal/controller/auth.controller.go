@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/shortlink-backend/internal/binder"
 	"github.com/shortlink-backend/internal/dto"
+	"github.com/shortlink-backend/internal/jwttoken"
 	"github.com/shortlink-backend/internal/response"
 	"github.com/shortlink-backend/internal/service"
 )
@@ -97,4 +98,38 @@ func (ac *AuthController) Login(ctx *gin.Context) {
 	}
 
 	response.JSONSuccess(ctx, res, "Login Successfully")
+}
+
+// Logout godoc
+// @Summary Logout a user
+// @Description Logout a user by invalidating the token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 204 {object} nil "No Content"
+// @Failure 401 {object} dto.Response "Unauthorized"
+// @Failure 500 {object} dto.Response "Internal Server Error"
+// @Router /auth/logout [delete]
+func (ac *AuthController) Logout(ctx *gin.Context) {
+	claims, ok := jwttoken.GetClaims(ctx)
+	if !ok {
+		response.JSONUnauthorized(ctx, "Unauthorized, please login!")
+		return
+	}
+
+	expiresAt, err := claims.GetExpirationTime()
+	if err != nil || expiresAt == nil {
+		log.Println("Error: ", err.Error())
+		response.JSONUnauthorized(ctx, "Token expired, please login again!")
+		return
+	}
+
+	if err := ac.authService.LogoutUser(ctx.Request.Context(), claims.UserId); err != nil {
+		log.Println("Error: ", err.Error())
+		response.JSONInternalServerError(ctx)
+		return
+	}
+
+	response.JSONNoContent(ctx)
 }

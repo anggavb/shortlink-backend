@@ -25,30 +25,24 @@ func NewAuthCacheRepository(rdb *redis.Client) *AuthCacheRepository {
 	}
 }
 
-func (r *AuthCacheRepository) SaveToken(ctx context.Context, tokenHash string, user model.User, expiresAt time.Time) error {
+func (r *AuthCacheRepository) SaveToken(ctx context.Context, user model.User, expiresAt time.Time) error {
 	ttl := time.Until(expiresAt)
 	if ttl <= 0 {
 		return errors.New("token already expired")
 	}
 
-	userWithToken := model.UserWithToken{
-		User:  user,
-		Token: tokenHash,
-	}
-
-	userJSON, err := json.Marshal(userWithToken)
+	userJSON, err := json.Marshal(user)
 	if err != nil {
 		return err
 	}
 
-	return r.rdb.Set(ctx, r.tokenKey(user.Id, tokenHash), userJSON, ttl).Err()
+	return r.rdb.Set(ctx, r.tokenKey(user.Id), userJSON, ttl).Err()
 }
 
-func (r *AuthCacheRepository) tokenKey(userID int, tokenHash string) string {
-	key := fmt.Sprintf("auth:token~%d:%s", userID, tokenHash)
-	if r.prefix == "" {
-		return key
-	}
+func (r *AuthCacheRepository) DeleteToken(ctx context.Context, userId int) error {
+	return r.rdb.Del(ctx, r.tokenKey(userId)).Err()
+}
 
-	return r.prefix + ":" + key
+func (r *AuthCacheRepository) tokenKey(userID int) string {
+	return fmt.Sprintf("%s:user:%d", r.prefix, userID)
 }

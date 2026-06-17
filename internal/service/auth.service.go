@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/shortlink-backend/internal/dto"
-	"github.com/shortlink-backend/internal/jwttoken"
 	"github.com/shortlink-backend/internal/repository"
 	"github.com/shortlink-backend/pkg"
 )
@@ -53,7 +52,7 @@ func (as *AuthService) LoginUser(ctx context.Context, user dto.LoginRequest) (dt
 		return dto.AuthResponse{}, err
 	}
 
-	if err := as.authCache.SaveToken(ctx, jwttoken.HashToken(token), userLogin, claims.ExpiresAt.Time); err != nil {
+	if err := as.authCache.SaveToken(ctx, userLogin, claims.ExpiresAt.Time); err != nil {
 		return dto.AuthResponse{}, err
 	}
 
@@ -61,4 +60,8 @@ func (as *AuthService) LoginUser(ctx context.Context, user dto.LoginRequest) (dt
 		Token:     token,
 		ExpiresAt: claims.ExpiresAt.Time,
 	}, nil
+}
+
+func (as *AuthService) LogoutUser(ctx context.Context, userId int) error {
+	return as.authCache.DeleteToken(ctx, userId)
 }
