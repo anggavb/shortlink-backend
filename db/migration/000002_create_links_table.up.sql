@@ -2,7 +2,7 @@ CREATE TABLE "links" (
   "id" bigserial PRIMARY KEY,
   "user_id" bigint NOT NULL,
   "original_url" varchar NOT NULL UNIQUE,
-  "slug" varchar UNIQUE,
+  "slug" varchar(50) UNIQUE,
   "created_at" timestamp DEFAULT (now()),
   "updated_at" timestamp,
   "deleted_at" timestamp
