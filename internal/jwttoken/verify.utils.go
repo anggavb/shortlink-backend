@@ -14,18 +14,18 @@ func VerifyClientToken(ctx *gin.Context) (string, bool) {
 		return "", false
 	}
 
-	splittedBearer := strings.Fields(bearerToken)
-	if len(splittedBearer) == 1 {
+	splitBearer := strings.Fields(bearerToken)
+	if len(splitBearer) == 1 {
 		log.Println("Error: Invalid Authorization header format")
 		return "", false
 	}
 
-	if len(splittedBearer) != 2 || !strings.EqualFold(splittedBearer[0], "Bearer") {
+	if len(splitBearer) != 2 || !strings.EqualFold(splitBearer[0], "Bearer") {
 		log.Println("Error: Invalid Authorization header format")
 		return "", false
 	}
 
-	return splittedBearer[1], true
+	return splitBearer[1], true
 }
 
 func HandleTokenIsActive(ctx *gin.Context, isActive bool, err error) bool {

@@ -21,15 +21,7 @@ func VerifyToken(authCache *repository.AuthCacheRepository) gin.HandlerFunc {
 			return
 		}
 
-		tokenHash := jwttoken.HashToken(token)
-		isActive, err := authCache.IsTokenActive(ctx.Request.Context(), tokenHash, claims.UserId)
-		if !jwttoken.HandleTokenIsActive(ctx, isActive, err) {
-			ctx.AbortWithStatus(401)
-			return
-		}
-
 		ctx.Set("claims", claims)
-		ctx.Set("token_hash", tokenHash)
 		ctx.Next()
 	}
 }
