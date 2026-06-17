@@ -9,14 +9,14 @@ import (
 
 func JSONAbortUnauthorized(ctx *gin.Context) {
 	ctx.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-		Message: "Unauthorized",
 		Success: false,
+		Message: "Unauthorized",
 	})
 }
 
 func JSONAbortInternalServerError(ctx *gin.Context) {
 	ctx.AbortWithStatusJSON(http.StatusInternalServerError, dto.Response{
-		Message: "Internal Server Error",
 		Success: false,
+		Message: "Internal Server Error",
 	})
 }
