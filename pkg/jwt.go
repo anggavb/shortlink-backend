@@ -14,7 +14,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func NewClaims(id int, email string, isVerified bool, hasPin bool) *Claims {
+func NewClaims(id int, email string) *Claims {
 	return &Claims{
 		UserId: id,
 		Email:  email,
