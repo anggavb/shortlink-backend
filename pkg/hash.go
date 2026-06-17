@@ -60,21 +60,21 @@ func (h *HashConfig) GenerateHash(pwd string) string {
 
 func (h *HashConfig) Compare(pwd string, hashedPwd string) error {
 	// deconstruct hash
-	splittedHash := strings.Split(hashedPwd, "$")
+	splitHash := strings.Split(hashedPwd, "$")
 
 	// cek panjang
-	if len(splittedHash) != 6 {
+	if len(splitHash) != 6 {
 		return errors.New("invalid Hash")
 	}
 
 	// cek argon2id
-	if splittedHash[1] != "argon2id" {
+	if splitHash[1] != "argon2id" {
 		return errors.New("not argon2id hash")
 	}
 
 	// cek versi (v=19)
 	var version int
-	if _, err := fmt.Sscanf(splittedHash[2], "v=%d", &version); err != nil {
+	if _, err := fmt.Sscanf(splitHash[2], "v=%d", &version); err != nil {
 		return errors.New("wrong sscanf syntax")
 	}
 	if version != argon2.Version {
@@ -84,16 +84,16 @@ func (h *HashConfig) Compare(pwd string, hashedPwd string) error {
 	// ambil data config m, t, p
 	var memory, time uint32
 	var threads uint8
-	if _, err := fmt.Sscanf(splittedHash[3], "m=%d,t=%d,p=%d", &memory, &time, &threads); err != nil {
+	if _, err := fmt.Sscanf(splitHash[3], "m=%d,t=%d,p=%d", &memory, &time, &threads); err != nil {
 		return errors.New("wrong sscanf syntax")
 	}
 
 	// ambil salt dan hash
-	salt, err := base64.RawStdEncoding.DecodeString(splittedHash[4])
+	salt, err := base64.RawStdEncoding.DecodeString(splitHash[4])
 	if err != nil {
 		return errors.New("failed to decode salt")
 	}
-	hash, err := base64.RawStdEncoding.DecodeString(splittedHash[5])
+	hash, err := base64.RawStdEncoding.DecodeString(splitHash[5])
 	if err != nil {
 		return errors.New("failed to decode hash")
 	}
