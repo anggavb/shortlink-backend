@@ -2,4 +2,3 @@ tmp
 docs
 .env
 .air.toml
-Dockerfile
