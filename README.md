@@ -98,6 +98,12 @@ The API will run at:
 http://localhost:8080
 ```
 
+Init Swagger documentation:
+
+```bash
+swag init -g cmd/main.go -o docs
+```
+
 Open Swagger documentation at:
 
 ```text
@@ -105,6 +111,8 @@ http://localhost:8080/swagger/index.html
 ```
 
 For live reload development, install Air and run:
+
+Here for [.air.toml](https://gist.github.com/anggavb/11cc49709e1de97e1609f049bbf0569a) configuration file for Air live reload.
 
 ```bash
 air
