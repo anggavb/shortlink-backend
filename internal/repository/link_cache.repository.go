@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 )
+
+var ErrLinkCacheMiss = errors.New("link cache miss")
 
 type LinkCacheRepository struct {
 	rdb    *redis.Client
@@ -24,6 +27,18 @@ func NewLinkCacheRepository(rdb *redis.Client) *LinkCacheRepository {
 
 func (r *LinkCacheRepository) SaveOriginalURL(ctx context.Context, slug, originalURL string, ttl time.Duration) error {
 	return r.rdb.Set(ctx, r.linkKey(slug), originalURL, ttl).Err()
+}
+
+func (r *LinkCacheRepository) GetOriginalURL(ctx context.Context, slug string) (string, error) {
+	originalURL, err := r.rdb.Get(ctx, r.linkKey(slug)).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", ErrLinkCacheMiss
+		}
+		return "", err
+	}
+
+	return originalURL, nil
 }
 
 func (r *LinkCacheRepository) DeleteOriginalURL(ctx context.Context, slug string) error {

@@ -161,6 +161,43 @@ func (ls *LinkService) DeleteLink(ctx context.Context, userId int, linkId int64)
 	return ls.linkCache.DeleteOriginalURL(ctx, slug)
 }
 
+func (ls *LinkService) ResolveLink(ctx context.Context, slug string) (string, error) {
+	originalURL, err := ls.linkCache.GetOriginalURL(ctx, slug)
+	if err == nil {
+		return originalURL, nil
+	}
+
+	if err != nil && !errors.Is(err, repository.ErrLinkCacheMiss) {
+		return "", err
+	}
+
+	link, err := ls.linkRepository.GetActiveLinkBySlug(ctx, slug)
+	if err != nil {
+		if errors.Is(err, repository.ErrLinkNotFound) {
+			return "", ErrLinkNotFound
+		}
+		return "", err
+	}
+
+	if err := ls.linkCache.SaveOriginalURL(ctx, link.Slug, link.OriginalURL, linkCacheTTL); err != nil {
+		return "", err
+	}
+
+	return link.OriginalURL, nil
+}
+
+func (ls *LinkService) RecordLinkClick(ctx context.Context, slug, ipAddress, userAgent string) error {
+	err := ls.linkRepository.InsertLinkClickBySlug(ctx, slug, ipAddress, userAgent)
+	if err != nil {
+		if errors.Is(err, repository.ErrLinkNotFound) {
+			return ErrLinkNotFound
+		}
+		return err
+	}
+
+	return nil
+}
+
 func generateRandomSlug(length int) (string, error) {
 	const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	var builder strings.Builder

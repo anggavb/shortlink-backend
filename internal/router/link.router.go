@@ -18,6 +18,8 @@ func LinkRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	linkService := service.NewLinkService(linkRepo, linkCache)
 	linkController := controller.NewLinkController(linkService)
 
+	router.NoRoute(linkController.RedirectLink)
+
 	linkRouter.Use(middleware.VerifyToken())
 	linkRouter.POST("", linkController.CreateLink)
 	linkRouter.GET("", linkController.ListLinks)

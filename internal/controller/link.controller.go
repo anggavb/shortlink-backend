@@ -1,11 +1,14 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -19,6 +22,8 @@ import (
 type LinkController struct {
 	linkService *service.LinkService
 }
+
+const clickInsertTimeout = 3 * time.Second
 
 func NewLinkController(linkService *service.LinkService) *LinkController {
 	return &LinkController{
@@ -177,6 +182,54 @@ func (lc *LinkController) DeleteLink(ctx *gin.Context) {
 	response.JSONNoContent(ctx)
 }
 
+// RedirectLink godoc
+// @Summary Redirect shortlink
+// @Description Resolve a slug and redirect to its original URL
+// @Tags Links
+// @Param slug path string true "Shortlink slug"
+// @Success 301 "Moved Permanently"
+// @Failure 404 {object} dto.Response "Not Found"
+// @Failure 500 {object} dto.Response "Internal Server Error"
+// @Router /{slug} [get]
+func (lc *LinkController) RedirectLink(ctx *gin.Context) {
+	if ctx.Request.Method != http.MethodGet {
+		response.JSONNotFound(ctx, "Link Not Found")
+		return
+	}
+
+	slug, ok := slugFromPath(ctx.Request.URL.Path)
+	if !ok {
+		response.JSONNotFound(ctx, "Link Not Found")
+		return
+	}
+
+	originalURL, err := lc.linkService.ResolveLink(ctx.Request.Context(), slug)
+	if err != nil {
+		log.Println("Error: ", err.Error())
+		if errors.Is(err, service.ErrLinkNotFound) {
+			response.JSONNotFound(ctx, "Link Not Found")
+			return
+		}
+		response.JSONInternalServerError(ctx)
+		return
+	}
+
+	ipAddress := ctx.ClientIP()
+	userAgent := ctx.Request.UserAgent()
+	go lc.recordLinkClick(slug, ipAddress, userAgent)
+
+	ctx.Redirect(http.StatusMovedPermanently, originalURL)
+}
+
+func (lc *LinkController) recordLinkClick(slug, ipAddress, userAgent string) {
+	ctx, cancel := context.WithTimeout(context.Background(), clickInsertTimeout)
+	defer cancel()
+
+	if err := lc.linkService.RecordLinkClick(ctx, slug, ipAddress, userAgent); err != nil {
+		log.Println("Error: ", err.Error())
+	}
+}
+
 func buildShortURL(ctx *gin.Context, slug string) string {
 	scheme := "http"
 	if ctx.Request.TLS != nil {
@@ -188,4 +241,13 @@ func buildShortURL(ctx *gin.Context, slug string) string {
 	}
 
 	return fmt.Sprintf("%s://%s/%s", scheme, ctx.Request.Host, slug)
+}
+
+func slugFromPath(path string) (string, bool) {
+	slug := strings.Trim(path, "/")
+	if slug == "" || strings.Contains(slug, "/") {
+		return "", false
+	}
+
+	return slug, true
 }

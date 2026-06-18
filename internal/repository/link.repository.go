@@ -120,3 +120,45 @@ func (lr *LinkRepository) SoftDeleteLink(ctx context.Context, userId int, linkId
 
 	return slug, nil
 }
+
+func (lr *LinkRepository) GetActiveLinkBySlug(ctx context.Context, slug string) (model.Link, error) {
+	sql := `
+		SELECT id, original_url, slug
+		FROM links
+		WHERE slug = $1
+			AND deleted_at IS NULL;
+	`
+
+	var link model.Link
+	if err := lr.db.QueryRow(ctx, sql, slug).Scan(&link.ID, &link.OriginalURL, &link.Slug); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Link{}, ErrLinkNotFound
+		}
+		return model.Link{}, err
+	}
+
+	return link, nil
+}
+
+func (lr *LinkRepository) InsertLinkClickBySlug(ctx context.Context, slug, ipAddress, userAgent string) error {
+	sql := `
+		INSERT INTO link_clicks
+		(link_id, ip_address, user_agent)
+		SELECT id, $2, $3
+		FROM links
+		WHERE slug = $1
+			AND deleted_at IS NULL;
+	`
+	args := []any{slug, ipAddress, userAgent}
+
+	tag, err := lr.db.Exec(ctx, sql, args...)
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return ErrLinkNotFound
+	}
+
+	return nil
+}
