@@ -22,5 +22,11 @@ type ResetPasswordRequest struct {
 
 type AuthResponse struct {
 	Token     string    `json:"token"`
+	User      UserLogin `json:"user"`
 	ExpiresAt time.Time `json:"expires_at"`
+}
+
+type UserLogin struct {
+	Id    int    `json:"id"`
+	Email string `json:"email"`
 }

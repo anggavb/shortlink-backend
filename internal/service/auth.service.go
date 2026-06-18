@@ -58,6 +58,7 @@ func (as *AuthService) LoginUser(ctx context.Context, user dto.LoginRequest) (dt
 
 	return dto.AuthResponse{
 		Token:     token,
+		User:      dto.UserLogin{Id: userLogin.Id, Email: userLogin.Email},
 		ExpiresAt: claims.ExpiresAt.Time,
 	}, nil
 }
