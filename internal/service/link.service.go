@@ -118,23 +118,30 @@ func (ls *LinkService) ListLinks(ctx context.Context, userId int, query dto.List
 		limit = defaultLimit
 	}
 
-	total, err := ls.linkRepository.CountLinksByUser(ctx, userId)
+	search := ""
+	if query.Search != nil {
+		search = strings.TrimSpace(*query.Search)
+	}
+
+	total, err := ls.linkRepository.CountLinksByUser(ctx, userId, search)
 	if err != nil {
 		return dto.ListLinksResponse{}, err
 	}
 
 	offset := (page - 1) * limit
-	links, err := ls.linkRepository.ListLinksByUser(ctx, userId, limit, offset)
+	links, err := ls.linkRepository.ListLinksByUser(ctx, userId, limit, offset, search)
 	if err != nil {
 		return dto.ListLinksResponse{}, err
 	}
 
-	data := make([]dto.CreateLinkResponse, 0, len(links))
+	data := make([]dto.LinkListItemResponse, 0, len(links))
 	for _, link := range links {
-		data = append(data, dto.CreateLinkResponse{
+		data = append(data, dto.LinkListItemResponse{
 			ID:          link.ID,
 			OriginalURL: link.OriginalURL,
 			Slug:        link.Slug,
+			CreatedAt:   link.CreatedAt,
+			ClickCount:  link.ClickCount,
 		})
 	}
 

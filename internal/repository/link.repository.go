@@ -49,32 +49,36 @@ func (lr *LinkRepository) CreateLink(ctx context.Context, userId int, originalUR
 	return link, nil
 }
 
-func (lr *LinkRepository) CountLinksByUser(ctx context.Context, userId int) (int64, error) {
+func (lr *LinkRepository) CountLinksByUser(ctx context.Context, userId int, search string) (int64, error) {
 	sql := `
 		SELECT COUNT(id)
 		FROM links
 		WHERE user_id = $1
-			AND deleted_at IS NULL;
+			AND deleted_at IS NULL
+			AND ($2 = '' OR slug ILIKE $2 OR original_url ILIKE $2);
 	`
 
 	var total int64
-	if err := lr.db.QueryRow(ctx, sql, userId).Scan(&total); err != nil {
+	if err := lr.db.QueryRow(ctx, sql, userId, searchPattern(search)).Scan(&total); err != nil {
 		return 0, err
 	}
 
 	return total, nil
 }
 
-func (lr *LinkRepository) ListLinksByUser(ctx context.Context, userId, limit, offset int) ([]model.Link, error) {
+func (lr *LinkRepository) ListLinksByUser(ctx context.Context, userId, limit, offset int, search string) ([]model.Link, error) {
 	sql := `
-		SELECT id, original_url, slug
-		FROM links
-		WHERE user_id = $1
-			AND deleted_at IS NULL
-		ORDER BY created_at DESC, id DESC
+		SELECT l.id, l.original_url, l.slug, l.created_at, COUNT(lc.id) AS click_count
+		FROM links l
+		LEFT JOIN link_clicks lc ON lc.link_id = l.id
+		WHERE l.user_id = $1
+			AND l.deleted_at IS NULL
+			AND ($4 = '' OR l.slug ILIKE $4 OR l.original_url ILIKE $4)
+		GROUP BY l.id, l.original_url, l.slug, l.created_at
+		ORDER BY l.created_at DESC, l.id DESC
 		LIMIT $2 OFFSET $3;
 	`
-	args := []any{userId, limit, offset}
+	args := []any{userId, limit, offset, searchPattern(search)}
 
 	rows, err := lr.db.Query(ctx, sql, args...)
 	if err != nil {
@@ -85,7 +89,7 @@ func (lr *LinkRepository) ListLinksByUser(ctx context.Context, userId, limit, of
 	links := make([]model.Link, 0)
 	for rows.Next() {
 		var link model.Link
-		if err := rows.Scan(&link.ID, &link.OriginalURL, &link.Slug); err != nil {
+		if err := rows.Scan(&link.ID, &link.OriginalURL, &link.Slug, &link.CreatedAt, &link.ClickCount); err != nil {
 			return nil, err
 		}
 		links = append(links, link)
@@ -96,6 +100,14 @@ func (lr *LinkRepository) ListLinksByUser(ctx context.Context, userId, limit, of
 	}
 
 	return links, nil
+}
+
+func searchPattern(search string) string {
+	if search == "" {
+		return ""
+	}
+
+	return "%" + search + "%"
 }
 
 func (lr *LinkRepository) SoftDeleteLink(ctx context.Context, userId int, linkId int64) (string, error) {

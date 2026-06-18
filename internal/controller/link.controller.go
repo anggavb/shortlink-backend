@@ -91,6 +91,7 @@ func (lc *LinkController) CreateLink(ctx *gin.Context) {
 // @Security ApiKeyAuth
 // @Param page query int false "Page number" minimum(1)
 // @Param limit query int false "Items per page" minimum(1) maximum(100)
+// @Param search query string false "Search term matched against slug or original URL"
 // @Success 200 {object} dto.Response "OK"
 // @Failure 400 {object} dto.Response "Bad Request"
 // @Failure 401 {object} dto.Response "Unauthorized"
